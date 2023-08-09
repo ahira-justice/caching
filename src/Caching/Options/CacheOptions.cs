@@ -1,6 +1,6 @@
 namespace Caching.Options
 {
-    public class CacheOptions
+    public struct CacheOptions
     {
         public int SizeLimit { get; set; }
     }
