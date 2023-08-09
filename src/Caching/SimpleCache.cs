@@ -1,33 +1,25 @@
 using System;
 using System.Collections.Generic;
-using Caching.Exceptions;
-using Caching.Interfaces;
+using System.Linq;
 using Caching.Models;
 using Caching.Options;
 
 namespace Caching
 {
-    public class Cache : ICache
+    public class SimpleCache : ICache
     {
         private readonly int _sizeLimit;
         private readonly Dictionary<string, CacheEntry> _cache;
 
-        public int CacheSize
+        private int CacheSize
         {
             get
             {
-                int size = 0;
-
-                foreach (var entry in _cache.Values)
-                {
-                    size += entry.Value.Length;
-                }
-
-                return size;
+                return _cache.Values.Sum(entry => entry.Value.Length);
             }
         }
 
-        public Cache(CacheOptions options)
+        public SimpleCache(CacheOptions options)
         {
             _sizeLimit = options.SizeLimit;
             _cache = new Dictionary<string, CacheEntry>();
@@ -37,23 +29,29 @@ namespace Caching
         {
             if (string.IsNullOrEmpty(key))
                 throw new ArgumentNullException(nameof(key));
-
+            
+            if (!_cache.ContainsKey(key))
+                return null;
+            
             byte[] value = null;
+            var entry = _cache[key];
 
-            if (_cache.ContainsKey(key))
+            if (!entry.ExpiresIn.HasValue || DateTime.UtcNow < entry.EntryTime + entry.ExpiresIn)
             {
-                var entry = _cache[key];
-
-                if (DateTime.UtcNow < entry.EntryTime + entry.Expiry)
-                    value = entry.Value;
-                else
-                    _cache.Remove(key);
+                value = entry.Value;
             }
+            else
+                _cache.Remove(key);
 
             return value;
         }
 
-        public void Set(string key, byte[] value, int duration)
+        public void Set(string key, byte[] value)
+        {
+            Set(key, value, null);
+        }
+
+        public void Set(string key, byte[] value, int? ttl)
         {
             if (string.IsNullOrEmpty(key))
                 throw new ArgumentNullException(nameof(key));
@@ -61,17 +59,17 @@ namespace Caching
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
-            if (duration <= 0)
-                throw new ArgumentNullException(nameof(duration));
+            if (ttl <= 0)
+                throw new ArgumentNullException(nameof(ttl));
 
             if (CacheSize + value.Length > _sizeLimit)
-                throw new CacheSizeLimitExceededException();
+                _cache.Remove(_cache.Keys.ElementAt(new Random().Next(0, _cache.Keys.Count)));
 
             var entry = new CacheEntry
             {
                 Value = value,
                 EntryTime = DateTime.UtcNow,
-                Expiry = new TimeSpan(0, 0, duration)
+                ExpiresIn = !ttl.HasValue ? (TimeSpan?)null : new TimeSpan(0, 0, ttl.Value)
             };
 
             _cache[key] = entry;
