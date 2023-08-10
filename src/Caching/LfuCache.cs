@@ -94,6 +94,7 @@ namespace Caching
             };
 
             _cache[key] = entry;
+            InitializeEntryFrequency(key);
         }
 
         private void InvalidateCache()
@@ -104,6 +105,14 @@ namespace Caching
                 _cache.Remove(lfu);
 
             _frequencyTable.Remove(_frequencyTable.Keys.Min());
+        }
+        
+        private void InitializeEntryFrequency(string entry)
+        {
+            if (_frequencyTable.Keys.Contains(0))
+                _frequencyTable[0].Add(entry);
+            else
+                _frequencyTable[0] = new List<string> {entry};
         }
     }
 }
