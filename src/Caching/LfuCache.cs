@@ -65,6 +65,14 @@ namespace Caching
                 _frequencyTable[entryFrequency].Add(entry);
             else
                 _frequencyTable[entryFrequency] = new List<string> {entry};
+
+            RemoveEmptyFrequency();
+        }
+
+        private void RemoveEmptyFrequency()
+        {
+            foreach (var key in _frequencyTable.Keys.Where(key => _frequencyTable[key].Count == 0))
+                _frequencyTable.Remove(key);
         }
 
         public void Set(string key, byte[] value)
