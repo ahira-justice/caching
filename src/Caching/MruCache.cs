@@ -82,6 +82,7 @@ namespace Caching
             };
 
             _cache[key] = entry;
+            InitializeEntryRecency(key);
         }
 
         private void InvalidateCache()
@@ -89,6 +90,12 @@ namespace Caching
             var mru = _recencyList.First.Value;
             _cache.Remove(mru);
             _recencyList.Remove(mru);
+        }
+        
+        private void InitializeEntryRecency(string entry)
+        {
+            _recencyList.Remove(entry);
+            _recencyList.AddLast(entry);
         }
     }
 }
