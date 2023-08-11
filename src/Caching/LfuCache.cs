@@ -117,6 +117,9 @@ namespace Caching
         
         private void InitializeEntryFrequency(string entry)
         {
+            foreach (var pair in _frequencyTable.Where(pair => pair.Value.Contains(entry)))
+                pair.Value.Remove(entry);
+
             if (_frequencyTable.Keys.Contains(0))
                 _frequencyTable[0].Add(entry);
             else
