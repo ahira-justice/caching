@@ -41,7 +41,7 @@ namespace Caching
             if (!entry.ExpiresIn.HasValue || DateTime.UtcNow < entry.EntryTime + entry.ExpiresIn)
             {
                 value = entry.Value;
-                UpdateFrequency(key);
+                UpdateRecency(key);
             }
             else
                 _cache.Remove(key);
@@ -49,7 +49,7 @@ namespace Caching
             return value;
         }
 
-        private void UpdateFrequency(string entry)
+        private void UpdateRecency(string entry)
         {
             _recencyList.Remove(entry);
             _recencyList.AddFirst(entry);
